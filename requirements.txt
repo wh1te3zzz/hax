@@ -1,0 +1,5 @@
+# requirements.txt
+
+requests>=2.32.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.3 ; sys_platform != 'win32'  # Windows 上可选，其他系统建议安装
