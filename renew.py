@@ -1,3 +1,17 @@
+# -*- coding:utf-8 -*-
+# -------------------------------
+# @Author : github@wh1te3zzz https://github.com/wh1te3zzz/hax
+# @Time : 2025-05-16 14:47:16
+# hax续期提醒脚本
+# -------------------------------
+"""
+hax 手动续期提醒
+
+cron: 59 * * * *
+const $ = new Env("hax 手动续期提醒");
+"""
+# renew.py
+
 from datetime import datetime, timedelta
 # 导入通知模块（notify.py）
 import notify
