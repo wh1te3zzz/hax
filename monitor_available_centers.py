@@ -10,14 +10,13 @@ hax 可开通区域
 cron: 59 * * * *
 const $ = new Env("hax 可开通区域");
 """
-# script_monitor_data_centers.py
+# monitor_available_centers.py
 
 import re
 import requests
 from bs4 import BeautifulSoup
-
-from cache_utils import save_current_data  # 可选：记录最新数据（不需要对比）
-from wxpusher_notifier import wx_pusher_notify
+# 通知模块导入（ notify.py 在同目录下）
+from notify import send
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
@@ -32,7 +31,6 @@ class DataCenterMonitor:
     def fetch_page(url):
         """
         请求页面内容。
-        
         :param url: 目标URL
         :return: 页面内容或空字符串（请求失败时）
         """
@@ -47,7 +45,6 @@ class DataCenterMonitor:
     def parse_vps_centers(self, html_text, vir=False):
         """
         解析VPS中心信息。
-        
         :param html_text: 页面HTML内容
         :param vir: 是否解析虚拟机选项
         :return: 解析后的中心信息字符串
@@ -68,7 +65,6 @@ class DataCenterMonitor:
     def get_data_center(self, url, vir=False):
         """
         获取数据中心信息。
-        
         :param url: 目标URL
         :param vir: 是否解析虚拟机选项
         :return: 解析后的数据中心信息
@@ -91,11 +87,12 @@ class DataCenterMonitor:
         )
 
         if vir_str.strip() or woiden_str.strip():
+            title = "🌐 检测到可开通区域！"
+            content = data_center
             print("检测到可开通区域信息，正在推送...")
-            wx_pusher_notify(data_center)
+            send(title, content)
         else:
             print("无可用开通区域，跳过推送。")
-
 
 if __name__ == "__main__":
     monitor = DataCenterMonitor()
