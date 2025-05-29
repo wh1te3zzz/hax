@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 # -------------------------------
 # @Author : github@wh1te3zzz https://github.com/wh1te3zzz/hax
-# @Time : 2025-05-15 13:57:56
+# @Time : 2025-05-29 09:53:56
 # hax监控脚本，监控数据中心变化和当前可创建的区域
 # -------------------------------
 """
@@ -15,7 +15,6 @@ const $ = new Env("hax 可开通区域");
 import re
 import requests
 from bs4 import BeautifulSoup
-# 通知模块导入（ notify.py 在同目录下）
 from notify import send
 
 HEADERS = {
@@ -24,6 +23,8 @@ HEADERS = {
 
 URL_HAX_CREATE_VPS = "https://hax.co.id/create-vps"
 URL_WOIDEN_CREATE_VPS = "https://woiden.id/create-vps"
+
+ENV_NAME = "HAX_AVAILABLE"  # 青龙环境变量名称
 
 
 class DataCenterMonitor:
@@ -74,6 +75,32 @@ class DataCenterMonitor:
             return ""
         return self.parse_vps_centers(html, vir)
 
+    # =================== 环境变量操作模块 START =================== #
+
+    def get_cached_data(self):
+        """从青龙环境中获取缓存的数据"""
+        envs_response = QLAPI.getEnvs({"searchValue": ENV_NAME})
+        data = envs_response.get("data", [])
+        return data[0]["value"] if data else None
+
+    def update_or_create_env(self, value):
+        """更新或创建环境变量"""
+        envs = QLAPI.getEnvs({"searchValue": ENV_NAME}).get("data", [])
+        new_env = {
+            "name": ENV_NAME,
+            "value": value,
+            "remarks": "数据中心信息缓存"
+        }
+
+        if envs:
+            item = envs[0]
+            item["value"] = value
+            QLAPI.updateEnv({"env": item}) and print("✅ 环境变量已更新")
+        else:
+            QLAPI.createEnv({"envs": [new_env]}) and print("✅ 环境变量已创建")
+
+    # =================== 环境变量操作模块 END =================== #
+
     def main(self):
         vir_str = self.get_data_center(URL_HAX_CREATE_VPS, vir=True)
         woiden_str = self.get_data_center(URL_WOIDEN_CREATE_VPS)
@@ -86,13 +113,19 @@ class DataCenterMonitor:
             f"{woiden_str}\n"
         )
 
-        if vir_str.strip() or woiden_str.strip():
-            title = "🌐 检测到可开通区域！"
-            content = data_center
-            print("检测到可开通区域信息，正在推送...")
-            send(title, content)
+        last_data = self.get_cached_data()
+
+        if data_center.strip() == "":
+            print("❌ 当前无可用开通区域。")
+            return
+
+        if last_data != data_center:
+            print("🔄 检测到数据变化，正在更新缓存并推送通知...")
+            self.update_or_create_env(data_center)
+            send("🌐【数据中心信息更新】", data_center)
         else:
-            print("无可用开通区域，跳过推送。")
+            print("🔵 数据未发生变化，无需更新。")
+
 
 if __name__ == "__main__":
     monitor = DataCenterMonitor()
